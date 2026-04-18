@@ -1,0 +1,40 @@
+﻿<Window x:Class="Client_Ranker.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Client_Ranker"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800" Background="#FFAFA192">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Client Ranker " 
+               FontSize="22" FontWeight="Bold" Foreground="#2d3436"
+               HorizontalAlignment="Center" Margin="0,0,0,20"/>
+
+        <DataGrid Grid.Row="1" x:Name="CustomerGrid" 
+              AutoGenerateColumns="False" 
+              CanUserAddRows="False"
+              IsReadOnly="True"
+              Background="#FFF3F3F3" BorderBrush="#dfe6e9">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="DNI/Documento" Binding="{Binding DocumentId}" Width="120"/>
+                <DataGridTextColumn Header="Nombre" Binding="{Binding FirstName}" Width="*"/>
+                <DataGridTextColumn Header="Apellido" Binding="{Binding LastName}" Width="*"/>
+                <DataGridTextColumn Header="Puntos" Binding="{Binding Points}" Width="80"/>
+                <DataGridTextColumn Header="Categoría" Binding="{Binding Category}" Width="100"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button x:Name="BtnRefresh" Content="Actualizar" Width="100" Height="30" Margin="5"/>
+            <Button x:Name="BtnAdd" Content="Nuevo Cliente" Width="120" Height="30" Margin="5" 
+                Background="#FF1981D2" Foreground="White" FontWeight="Bold"/>
+        </StackPanel>
+    </Grid>
+</Window>

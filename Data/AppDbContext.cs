@@ -1,0 +1,22 @@
+﻿using Microsoft.EntityFrameworkCore;
+using Client_Ranker.Models; 
+
+namespace Client_Ranker.Data
+{
+    public class AppDbContext : DbContext
+    {
+        public DbSet<Customer> Customers { get; set; }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlite("Data Source=loyalty_database.db");
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Customer>()
+                .HasIndex(c => c.DocumentId)
+                .IsUnique();
+        }
+    }
+}
