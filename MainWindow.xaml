@@ -13,28 +13,61 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Client Ranker " 
-               FontSize="22" FontWeight="Bold" Foreground="#2d3436"
-               HorizontalAlignment="Center" Margin="0,0,0,20"/>
+        <DockPanel Grid.Row="0" Margin="0,0,0,15">
+            <TextBlock Text="Client Ranker" FontSize="22" FontWeight="Bold" Foreground="#2d3436" VerticalAlignment="Center"/>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <TextBlock Text="Visualizar período:" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="Bold"/>
+                <ComboBox SelectedIndex="{Binding SelectedPeriodIndex}" Width="150" Padding="5">
+                    <ComboBoxItem Content="Mes Actual"/>
+                    <ComboBoxItem Content="Mes Anterior"/>
+                </ComboBox>
+            </StackPanel>
+        </DockPanel>
 
         <DataGrid Grid.Row="1" x:Name="CustomerGrid" 
-              AutoGenerateColumns="False" 
-              CanUserAddRows="False"
-              IsReadOnly="True"
-              Background="#FFF3F3F3" BorderBrush="#dfe6e9">
+              ItemsSource="{Binding CustomersDisplay}" 
+              SelectedItem="{Binding SelectedCustomer}"
+              AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+              Background="White" BorderBrush="#dfe6e9">
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsActive}" Value="False">
+                            <Setter Property="Background" Value="#f5f6fa"/>
+                            <Setter Property="Foreground" Value="#b2bec3"/>
+                            <Setter Property="FontStyle" Value="Italic"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.RowStyle>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="DNI/Documento" Binding="{Binding DocumentId}" Width="120"/>
                 <DataGridTextColumn Header="Nombre" Binding="{Binding FirstName}" Width="*"/>
                 <DataGridTextColumn Header="Apellido" Binding="{Binding LastName}" Width="*"/>
+                <DataGridTextColumn Header="Monto Período" Binding="{Binding Spending, StringFormat=C}" Width="120"/>
                 <DataGridTextColumn Header="Puntos" Binding="{Binding Points}" Width="80"/>
                 <DataGridTextColumn Header="Categoría" Binding="{Binding Category}" Width="100"/>
             </DataGrid.Columns>
         </DataGrid>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-            <Button x:Name="BtnRefresh" Content="Actualizar" Width="100" Height="30" Margin="5"/>
-            <Button x:Name="BtnAdd" Content="Nuevo Cliente" Width="120" Height="30" Margin="5" 
-                Background="#FF1981D2" Foreground="White" FontWeight="Bold"/>
-        </StackPanel>
+        <Grid Grid.Row="2" Margin="0,20,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <Button Content="Cargar Compra" Command="{Binding AddPurchaseCommand}" 
+                Width="120" Height="30" Margin="0,0,10,0" Background="#FF0984E3" Foreground="White" FontWeight="Bold"/>
+                <Button Content="Editar Cliente" Command="{Binding EditCustomerCommand}" 
+                Width="120" Height="30" Margin="0,0,10,0" Background="#0984e3" Foreground="White"/>
+
+                <Button Content="Eliminar Cliente" Command="{Binding DeleteCustomerCommand}" 
+                    Width="120" Height="30" Margin="10,0,0,0" Background="#d63031" Foreground="White"/>
+                <Button Content="Restaurar Cliente" Command="{Binding RestoreCustomerCommand}" Width="114" Height="30" Margin="10,0,0,0" Background="#FF615350" Foreground="White"/>
+
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Nuevo Cliente" Command="{Binding OpenAddCustomerCommand}" Width="120" Height="30" Margin="5" 
+                    Background="#FF1981D2" Foreground="White" FontWeight="Bold"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>
