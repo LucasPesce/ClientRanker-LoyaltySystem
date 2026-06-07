@@ -1,6 +1,6 @@
 # 💎 Client Ranker: Sistema de Lealtad y Fidelización | Luc Pesce
 
-![Estado](https://img.shields.io/badge/Estado-Finalizado-success)
+![Estado](https://img.shields.io/badge/Estado-Desarrollo-orange)
 ![C#](https://img.shields.io/badge/C%23-12.0-239120?logo=csharp&logoColor=white)
 ![.NET](https://img.shields.io/badge/.NET-8.0_LTS-512BD4?logo=dotnet&logoColor=white)
 ![WPF](https://img.shields.io/badge/WPF-UI_Framework-0078D4?logo=windows&logoColor=white)
