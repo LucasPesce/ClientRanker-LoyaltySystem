@@ -5,7 +5,13 @@ namespace Client_Ranker.Data
 {
     public class AppDbContext : DbContext
     {
+        public AppDbContext()
+        {
+            this.Database.Migrate();
+        }
+
         public DbSet<Customer> Customers { get; set; }
+        public DbSet<AppConfig> Configurations { get; set; } 
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

@@ -2,6 +2,7 @@
 using Client_Ranker.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -9,38 +10,20 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Client_Ranker.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260607053122_UpdateCustomerPeriodSchema")]
+    partial class UpdateCustomerPeriodSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.12");
-
-            modelBuilder.Entity("Client_Ranker.Models.AppConfig", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("LastClosedMonth")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("LastClosedYear")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Configurations");
-                });
 
             modelBuilder.Entity("Client_Ranker.Models.Customer", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
-
-                    b.Property<decimal>("CurrentMonthSpending")
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("DocumentId")
                         .IsRequired()
@@ -50,14 +33,11 @@ namespace Client_Ranker.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<decimal>("LastMonthSpending")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("LastName")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("MonthlySpending")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
