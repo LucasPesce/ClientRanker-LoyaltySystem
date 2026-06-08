@@ -2,6 +2,7 @@
 using Client_Ranker.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -9,9 +10,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Client_Ranker.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260608183424_AddMonthlySummaryAndDynamicPoints")]
+    partial class AddMonthlySummaryAndDynamicPoints
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.12");
@@ -22,25 +25,10 @@ namespace Client_Ranker.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("DiamondThreshold")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("GoldThreshold")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("LastClosedMonth")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("LastClosedYear")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<decimal>("PesosPorPunto")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("PlatinumThreshold")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("SilverThreshold")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
@@ -56,9 +44,6 @@ namespace Client_Ranker.Migrations
 
                     b.Property<decimal>("CurrentMonthSpending")
                         .HasColumnType("TEXT");
-
-                    b.Property<int>("CurrentMonthVisits")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("DocumentId")
                         .IsRequired()
@@ -84,47 +69,6 @@ namespace Client_Ranker.Migrations
                         .IsUnique();
 
                     b.ToTable("Customers");
-                });
-
-            modelBuilder.Entity("Client_Ranker.Models.MonthlySummary", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("BronzeCount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("DiamondCount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("GoldCount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Month")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("PlatinumCount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("SilverCount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<decimal>("TotalRevenue")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("TotalTickets")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("UniqueCustomers")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Year")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("MonthlySummaries");
                 });
 #pragma warning restore 612, 618
         }

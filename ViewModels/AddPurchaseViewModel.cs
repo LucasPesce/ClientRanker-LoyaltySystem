@@ -40,6 +40,8 @@ namespace Client_Ranker.ViewModels
             if (customer != null)
             {
                 customer.CurrentMonthSpending += PurchaseAmount;
+                customer.CurrentMonthVisits++;
+
                 context.SaveChanges();
                 _closeWindow();
             }

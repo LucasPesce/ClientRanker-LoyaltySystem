@@ -11,7 +11,8 @@ namespace Client_Ranker.Data
         }
 
         public DbSet<Customer> Customers { get; set; }
-        public DbSet<AppConfig> Configurations { get; set; } 
+        public DbSet<AppConfig> Configurations { get; set; }
+        public DbSet<MonthlySummary> MonthlySummaries { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

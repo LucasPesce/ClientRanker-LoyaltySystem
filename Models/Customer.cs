@@ -16,7 +16,7 @@ namespace Client_Ranker.Models
         public decimal CurrentMonthSpending { get; set; }
         public decimal LastMonthSpending { get; set; }
         public bool IsActive { get; set; } = true;
-
+        public int CurrentMonthVisits { get; set; }
         public void RotatePeriod()
         {
             LastMonthSpending = CurrentMonthSpending;

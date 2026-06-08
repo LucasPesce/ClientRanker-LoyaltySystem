@@ -1,0 +1,90 @@
+﻿<Window x:Class="Client_Ranker.View.DashboardWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Panel de Inteligencia Comercial" Height="500" Width="700"
+        WindowStartupLocation="CenterScreen" Background="#FFAFA192">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Resumen del Último Mes Cerrado" FontSize="22" FontWeight="Bold" Foreground="#2d3436" Margin="0,0,0,20"/>
+
+        <Grid Grid.Row="1" Margin="0,0,0,20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="#FFE5E5E5" CornerRadius="8" Padding="15">
+                <StackPanel>
+                    <TextBlock Text="Total Facturado" Foreground="#636e72" FontSize="14" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding TotalRevenue, StringFormat=C}" Foreground="#0984e3" FontSize="24" FontWeight="Bold" Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="2" Background="#FFE5E5E5" CornerRadius="8" Padding="15">
+                <StackPanel>
+                    <TextBlock Text="Tickets Emitidos" Foreground="#636e72" FontSize="14" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding TotalTickets}" Foreground="#00b894" FontSize="24" FontWeight="Bold" Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="4" Background="#FFE5E5E5" CornerRadius="8" Padding="15">
+                <StackPanel>
+                    <TextBlock Text="Ticket Promedio" Foreground="#636e72" FontSize="14" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding AverageTicket, StringFormat=C}" Foreground="#d63031" FontSize="24" FontWeight="Bold" Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="2" Background="#FFE5E5E5" CornerRadius="8" Padding="20">
+            <StackPanel>
+                <TextBlock Text="Distribución de Fidelidad" FontSize="16" FontWeight="Bold" Foreground="#2d3436" Margin="0,0,0,15"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                        <TextBlock Text="Bronce" Foreground="#b2bec3" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding BronzeCount}" FontSize="20" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                        <TextBlock Text="Plata" Foreground="#7f8fa6" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding SilverCount}" FontSize="20" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                        <TextBlock Text="Oro" Foreground="#e1b12c" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding GoldCount}" FontSize="20" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+                        <TextBlock Text="Platino" Foreground="#00a8ff" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding PlatinumCount}" FontSize="20" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="4" HorizontalAlignment="Center">
+                        <TextBlock Text="Diamante" Foreground="#9c88ff" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding DiamondCount}" FontSize="20" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="3" Background="#FFE0D0AE" CornerRadius="5" Padding="15" Margin="0,20,0,0">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="💡" FontSize="20" Margin="0,0,10,0"/>
+                <TextBlock Text="{Binding InsightMessage}" FontSize="14" FontWeight="SemiBold" Foreground="#2d3436" VerticalAlignment="Center" TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
