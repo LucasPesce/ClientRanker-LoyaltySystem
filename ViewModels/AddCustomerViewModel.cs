@@ -56,8 +56,6 @@ namespace Client_Ranker.ViewModels
             context.Customers.Add(newCustomer);
             context.SaveChanges();
 
-            MessageBox.Show("Cliente guardado con éxito.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-
             // 4. Cerramos la ventana una vez guardado
             _closeWindow();
         }

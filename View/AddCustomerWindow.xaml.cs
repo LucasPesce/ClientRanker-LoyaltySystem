@@ -1,0 +1,29 @@
+﻿using Client_Ranker.ViewModels;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+
+namespace Client_Ranker.View
+{
+    /// <summary>
+    /// Lógica de interacción para AddCustomerWindow.xaml
+    /// </summary>
+    public partial class AddCustomerWindow : Window
+    {
+        public AddCustomerWindow()
+        {
+            InitializeComponent();
+            this.DataContext = new AddCustomerViewModel(this.Close);
+        }
+    }
+}

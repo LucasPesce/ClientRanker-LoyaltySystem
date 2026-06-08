@@ -1,4 +1,5 @@
 ﻿using Client_Ranker.Data;
+using Client_Ranker.View;
 using Client_Ranker.Models;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -33,6 +34,9 @@ namespace Client_Ranker.ViewModels
         public ICommand EditCustomerCommand { get; set; }
         public ICommand AddPurchaseCommand { get; set; }
         public ICommand RestoreCustomerCommand { get; set; }
+        public ICommand OpenSettingsCommand { get; set; }
+
+        public ICommand OpenDashboardCommand { get; set; }
 
         public MainViewModel()
         {
@@ -41,25 +45,74 @@ namespace Client_Ranker.ViewModels
             EditCustomerCommand = new RelayCommand(OpenEditCustomerWindow);
             AddPurchaseCommand = new RelayCommand(OpenAddPurchaseWindow);
             RestoreCustomerCommand = new RelayCommand(RestoreCustomer);
+            OpenSettingsCommand = new RelayCommand(OpenSettingsWindow);
+            OpenDashboardCommand = new RelayCommand(OpenDashboardWindow);
 
             CheckAndCloseMonth();
 
             LoadCustomers();
         }
 
+        private string _searchText = string.Empty;
+
+
+        private void OpenDashboardWindow()
+        {
+            var dashboardWindow = new DashboardWindow();
+            dashboardWindow.ShowDialog();
+        }
+        public string SearchText
+        {
+            get => _searchText;
+            set
+            {
+                _searchText = value;
+                LoadCustomers();
+            }
+        }
+
         public void LoadCustomers()
         {
             using var context = new AppDbContext();
-            var dbCustomers = context.Customers
-                                         .OrderByDescending(c => c.IsActive)
-                                         .ThenBy(c => c.LastName)
-                                         .ToList();
+
+            // 1. Obtenemos la configuración actual (o creamos una por defecto si no existe)
+            var config = context.Configurations.FirstOrDefault();
+            if (config == null)
+            {
+                config = new AppConfig { LastClosedMonth = System.DateTime.Now.Month, LastClosedYear = System.DateTime.Now.Year };
+                context.Configurations.Add(config);
+                context.SaveChanges();
+            }
+            if (config.PesosPorPunto == 0)
+            {
+                config.PesosPorPunto = 100m;
+                config.SilverThreshold = 300;
+                config.GoldThreshold = 800;
+                config.PlatinumThreshold = 1500;
+                config.DiamondThreshold = 2500;
+                context.SaveChanges();
+            }
+            var query = context.Customers.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                var searchLower = SearchText.ToLower();
+                query = query.Where(c =>
+                    c.FirstName.ToLower().Contains(searchLower) ||
+                    c.LastName.ToLower().Contains(searchLower) ||
+                    c.DocumentId.Contains(searchLower));
+            }
+
+            var dbCustomers = query
+                .OrderByDescending(c => c.IsActive)
+                .ThenBy(c => c.LastName)
+                .ToList();
+
             CustomersDisplay.Clear();
 
             foreach (var c in dbCustomers)
             {
-                // Evaluamos qué monto mostrar según la selección del ComboBox
-                decimal spendingToShow = (_selectedPeriodIndex == 0) ? c.CurrentMonthSpending : c.LastMonthSpending;
+                decimal spendingToShow = (SelectedPeriodIndex == 0) ? c.CurrentMonthSpending : c.LastMonthSpending;
 
                 CustomersDisplay.Add(new CustomerRow
                 {
@@ -68,7 +121,14 @@ namespace Client_Ranker.ViewModels
                     FirstName = c.FirstName,
                     LastName = c.LastName,
                     Spending = spendingToShow,
-                    IsActive = c.IsActive
+                    IsActive = c.IsActive,
+
+                    // 2. Inyectamos las reglas de negocio al DTO
+                    PesosPorPunto = config.PesosPorPunto,
+                    SilverThreshold = config.SilverThreshold,
+                    GoldThreshold = config.GoldThreshold,
+                    PlatinumThreshold = config.PlatinumThreshold,
+                    DiamondThreshold = config.DiamondThreshold
                 });
             }
         }
@@ -92,7 +152,7 @@ namespace Client_Ranker.ViewModels
                 else
                 {
                     // Segundo clic (ya estaba inhabilitado): Borrado físico letal
-                    var result = MessageBox.Show($"¿Destruir el registro de {SelectedCustomer.FirstName} para siempre? No hay vuelta atrás.", "Borrado Permanente", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                    var result = MessageBox.Show($"¿Seguro quiere eliminar de forma definitiva el registro de {SelectedCustomer.FirstName}?.", "Borrado Permanente", MessageBoxButton.YesNo, MessageBoxImage.Warning);
                     if (result == MessageBoxResult.Yes)
                     {
                         context.Customers.Remove(customerInDb);
@@ -122,35 +182,37 @@ namespace Client_Ranker.ViewModels
         {
             using var context = new AppDbContext();
             var config = context.Configurations.FirstOrDefault();
+            if (config == null) return;
 
-            int currentMonth = System.DateTime.Now.Month;
-            int currentYear = System.DateTime.Now.Year;
-
-            // Si es la primera vez que se abre el programa en su historia
-            if (config == null)
+            if (config.LastClosedMonth != DateTime.Now.Month || config.LastClosedYear != DateTime.Now.Year)
             {
-                config = new AppConfig { LastClosedMonth = currentMonth, LastClosedYear = currentYear };
-                context.Configurations.Add(config);
-                context.SaveChanges();
-                return;
-            }
+                var allCustomers = context.Customers.ToList();
+                var clientesConConsumo = allCustomers.Where(c => c.CurrentMonthSpending > 0).ToList();
 
-            // Si el mes o el año actual es distinto al último mes cerrado, ejecutamos la rotación
-            if (config.LastClosedMonth != currentMonth || config.LastClosedYear != currentYear)
-            {
-                // 1. Exterminar definitivamente a los inactivos antes de rotar
-                var inactiveCustomers = context.Customers.Where(c => !c.IsActive).ToList();
-                context.Customers.RemoveRange(inactiveCustomers);
+                // AQUÍ ESTÁ LA LÓGICA REAL: Sumamos las visitas de todos los clientes
+                int totalTicketsReales = allCustomers.Sum(c => c.CurrentMonthVisits);
 
-                // 2. Rotar el período de los sobrevivientes activos
-                var activeCustomers = context.Customers.Where(c => c.IsActive).ToList();
-                foreach (var c in activeCustomers)
+                var summary = new MonthlySummary
                 {
-                    c.RotatePeriod();
+                    Year = config.LastClosedYear,
+                    Month = config.LastClosedMonth,
+                    TotalRevenue = clientesConConsumo.Sum(c => c.CurrentMonthSpending),
+                    UniqueCustomers = clientesConConsumo.Count,
+                    TotalTickets = totalTicketsReales, // <-- Ahora es un dato real
+                                                       // ... (mantené el resto de tus contadores de Bronce, Plata, etc. igual)
+                };
+
+                context.MonthlySummaries.Add(summary);
+
+                foreach (var customer in allCustomers)
+                {
+                    customer.LastMonthSpending = customer.CurrentMonthSpending;
+                    customer.CurrentMonthSpending = 0;
+                    customer.CurrentMonthVisits = 0; // <-- Reseteamos las visitas reales para el mes siguiente
                 }
 
-                config.LastClosedMonth = currentMonth;
-                config.LastClosedYear = currentYear;
+                config.LastClosedMonth = DateTime.Now.Month;
+                config.LastClosedYear = DateTime.Now.Year;
                 context.SaveChanges();
             }
         }
@@ -187,7 +249,12 @@ namespace Client_Ranker.ViewModels
             LoadCustomers(); // Recargamos para ver los puntos subir en tiempo real
         }
 
-
+        private void OpenSettingsWindow()
+        {
+            // Le pasamos LoadCustomers como la acción de recarga
+            var settingsWindow = new SettingsWindow(LoadCustomers);
+            settingsWindow.ShowDialog();
+        }
         private void OpenAddCustomerWindow()
         {
             var addWindow = new AddCustomerWindow();

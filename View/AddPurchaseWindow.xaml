@@ -1,0 +1,27 @@
+﻿<Window x:Class="Client_Ranker.View.AddPurchaseWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Client_Ranker"
+        mc:Ignorable="d"
+        Title="AddPurchaseWindow" Height="208" Width="800" Background="#FFAFA192">
+    <Grid Margin="20,20,20,0" Height="247" VerticalAlignment="Top">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Ingresar monto de la nueva compra:" 
+               FontSize="14" FontWeight="Bold" Foreground="#2d3436" Margin="0,0,0,10"/>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,20">
+            <TextBlock Text="$" FontSize="18" VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <TextBox Text="{Binding PurchaseAmount}" Width="222" FontSize="16" Padding="5" Background="#FFE5E5E5"/>
+        </StackPanel>
+
+        <Button Grid.Row="2" Content="Sumar Compra" Command="{Binding SavePurchaseCommand}" 
+            Background="#FF1981D2" Foreground="White" FontWeight="Bold" Height="35" VerticalAlignment="Top"/>
+    </Grid>
+</Window>

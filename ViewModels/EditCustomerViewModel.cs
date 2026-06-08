@@ -66,7 +66,6 @@ namespace Client_Ranker.ViewModels
                 customer.LastName = LastName;
 
                 context.SaveChanges();
-                MessageBox.Show("Datos actualizados correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                 _closeWindow();
             }
         }

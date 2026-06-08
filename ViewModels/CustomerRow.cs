@@ -8,8 +8,6 @@ namespace Client_Ranker.ViewModels
 {
     public class CustomerRow
     {
-        private const decimal PesosPorPunto = 100;
-
         public int Id { get; set; }
         public string DocumentId { get; set; } = string.Empty;
         public string FirstName { get; set; } = string.Empty;
@@ -17,16 +15,25 @@ namespace Client_Ranker.ViewModels
         public decimal Spending { get; set; }
         public bool IsActive { get; set; }
 
-        // Cálculos dinámicos basados en el período que se le asigne
-        public int Points => (int)(Spending / PesosPorPunto);
+        // NUEVO: Variables de configuración inyectadas
+        public decimal PesosPorPunto { get; set; }
+        public int SilverThreshold { get; set; }
+        public int GoldThreshold { get; set; }
+        public int PlatinumThreshold { get; set; }
+        public int DiamondThreshold { get; set; }
 
-        public string Category => Points switch
+        public int Points => PesosPorPunto > 0 ? (int)(Spending / PesosPorPunto) : 0;
+
+        public string Category
         {
-            <= 200 => "Bronce",
-            <= 400 => "Plata",
-            <= 700 => "Oro",
-            <= 1000 => "Platino",
-            _ => "Diamante"
-        };
+            get
+            {
+                if (Points < SilverThreshold) return "Bronce";
+                if (Points < GoldThreshold) return "Plata";
+                if (Points < PlatinumThreshold) return "Oro";
+                if (Points < DiamondThreshold) return "Platino";
+                return "Diamante";
+            }
+        }
     }
 }
