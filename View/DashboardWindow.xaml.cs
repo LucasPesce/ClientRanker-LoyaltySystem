@@ -1,26 +1,28 @@
-﻿using Client_Ranker.ViewModels;
+﻿using Client_Ranker.Data;
+using Client_Ranker.ViewModels;
+using Microsoft.EntityFrameworkCore; 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace Client_Ranker.View
 {
     public partial class DashboardWindow : Window
     {
-        public DashboardWindow()
+        // Agregamos el constructor que recibe la fábrica de DbContext
+        public DashboardWindow(IDbContextFactory<AppDbContext> dbContextFactory)
         {
             InitializeComponent();
-            DataContext = new DashboardViewModel();
+            DataContext = new DashboardViewModel(dbContextFactory);
+        }
+    }
+
+    // Helper simple para crear una fábrica por defecto si no hay DI configurada
+    public class DefaultDbContextFactory<TContext> : IDbContextFactory<TContext> where TContext : DbContext
+    {
+        public TContext CreateDbContext()
+        {
+            // Asumiendo que AppDbContext tiene un constructor público sin argumentos
+            return (TContext)Activator.CreateInstance(typeof(TContext))!;
         }
     }
 }

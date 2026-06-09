@@ -17,10 +17,10 @@ namespace Client_Ranker.View
 {
     public partial class SettingsWindow : Window
     {
-        public SettingsWindow(Action refreshGridAction)
+        public SettingsWindow(Action onSaveSuccess)
         {
             InitializeComponent();
-            this.DataContext = new SettingsViewModel(this.Close, refreshGridAction);
+            DataContext = new SettingsViewModel(onSaveSuccess, this.Close);
         }
     }
 }

@@ -1,33 +1,71 @@
-﻿using Client_Ranker.Data;
+﻿using ClosedXML.Excel;
+using Client_Ranker.Data;
 using Client_Ranker.View;
 using Client_Ranker.Models;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
+using System;
+using Client_Ranker.Services;
+using Microsoft.EntityFrameworkCore; // Necesario para IDbContextFactory
 
 namespace Client_Ranker.ViewModels
 {
+    /// ViewModel principal de la aplicación.
+    /// Gestiona la visualización del listado de clientes, la interacción con la base de datos
+    /// y la orquestación hacia otras ventanas (CRUD y utilidades).
     public class MainViewModel
     {
-        private int _selectedPeriodIndex = 0;
+        #region Dependencias (DI)
 
-        // Lista mapeada que la UI va a renderizar
+        // Inyectamos un Factory en lugar del DbContext directamente. 
+        // Esto previene fugas de memoria en WPF, ya que permite crear contextos de vida corta.
+        private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
+        private readonly IDialogService _dialogService;
+        #endregion
+
+        #region Campos Privados
+
+        private int _selectedPeriodIndex = 0;
+        private string _searchText = string.Empty;
+
+        #endregion
+
+        #region Propiedades de Enlace (Bindings)
+
+        /// Colección observable que notifica a la vista (DataGrid) cuando hay cambios en la lista de clientes.
+        /// </summary>
         public ObservableCollection<CustomerRow> CustomersDisplay { get; set; } = new();
 
-        // Propiedad para capturar qué fila tiene seleccionada el usuario
+        /// Fila actualmente seleccionada en el DataGrid por el usuario.
         public CustomerRow? SelectedCustomer { get; set; }
 
-        // Propiedad para detectar el cambio de mes en el ComboBox
+        /// Índice del ComboBox que define si vemos el mes actual (0) o el mes pasado (1).
         public int SelectedPeriodIndex
         {
             get => _selectedPeriodIndex;
             set
             {
                 _selectedPeriodIndex = value;
-                LoadCustomers(); // Cada vez que cambia el combo, recargamos la lista con los montos de ese mes
+                LoadCustomers(); // Recargamos la grilla al cambiar de período
             }
         }
+
+        /// Texto ingresado en la barra de búsqueda.
+        public string SearchText
+        {
+            get => _searchText;
+            set
+            {
+                _searchText = value;
+                LoadCustomers(); // Filtramos en tiempo real
+            }
+        }
+
+        #endregion
+
+        #region Comandos (ICommand)
 
         public ICommand OpenAddCustomerCommand { get; set; }
         public ICommand DeleteCustomerCommand { get; set; }
@@ -35,11 +73,21 @@ namespace Client_Ranker.ViewModels
         public ICommand AddPurchaseCommand { get; set; }
         public ICommand RestoreCustomerCommand { get; set; }
         public ICommand OpenSettingsCommand { get; set; }
-
         public ICommand OpenDashboardCommand { get; set; }
+        public ICommand ExportReportCommand { get; set; }
+        public ICommand TestAppCommand { get; set; }
 
-        public MainViewModel()
+        #endregion
+
+        #region Constructor e Inicialización
+
+        /// Constructor principal preparado para Inyección de Dependencias.
+        /// <param name="dbContextFactory">Fábrica de contextos de BD proveída por el contenedor DI.</param>
+       public MainViewModel(IDbContextFactory<AppDbContext> dbContextFactory, IDialogService dialogService)
         {
+            _dbContextFactory = dbContextFactory;
+            _dialogService = dialogService;
+
             OpenAddCustomerCommand = new RelayCommand(OpenAddCustomerWindow);
             DeleteCustomerCommand = new RelayCommand(DeleteCustomer);
             EditCustomerCommand = new RelayCommand(OpenEditCustomerWindow);
@@ -47,42 +95,41 @@ namespace Client_Ranker.ViewModels
             RestoreCustomerCommand = new RelayCommand(RestoreCustomer);
             OpenSettingsCommand = new RelayCommand(OpenSettingsWindow);
             OpenDashboardCommand = new RelayCommand(OpenDashboardWindow);
+            ExportReportCommand = new RelayCommand(ExportToExcel);
+            TestAppCommand = new RelayCommand(GenerateTestData);
 
             CheckAndCloseMonth();
-
             LoadCustomers();
         }
 
-        private string _searchText = string.Empty;
-
-
-        private void OpenDashboardWindow()
+        /// Método auxiliar para crear el contexto. 
+        /// Usa la Inyección de Dependencias si está disponible, sino hace un fallback (temporal).
+        private AppDbContext CreateContext()
         {
-            var dashboardWindow = new DashboardWindow();
-            dashboardWindow.ShowDialog();
-        }
-        public string SearchText
-        {
-            get => _searchText;
-            set
-            {
-                _searchText = value;
-                LoadCustomers();
-            }
+            return _dbContextFactory != null
+                ? _dbContextFactory.CreateDbContext()
+                : new AppDbContext();
         }
 
+        #endregion
+
+        #region Lógica de Base de Datos y Negocio
+
+        /// Carga y filtra los clientes desde la base de datos hacia la colección observable de la UI.
         public void LoadCustomers()
         {
-            using var context = new AppDbContext();
+            using var context = CreateContext();
 
-            // 1. Obtenemos la configuración actual (o creamos una por defecto si no existe)
+            // 1. Obtenemos o creamos la configuración del sistema
             var config = context.Configurations.FirstOrDefault();
             if (config == null)
             {
-                config = new AppConfig { LastClosedMonth = System.DateTime.Now.Month, LastClosedYear = System.DateTime.Now.Year };
+                config = new AppConfig { LastClosedMonth = DateTime.Now.Month, LastClosedYear = DateTime.Now.Year };
                 context.Configurations.Add(config);
                 context.SaveChanges();
             }
+
+            // Valores por defecto de seguridad si no existen
             if (config.PesosPorPunto == 0)
             {
                 config.PesosPorPunto = 100m;
@@ -92,8 +139,10 @@ namespace Client_Ranker.ViewModels
                 config.DiamondThreshold = 2500;
                 context.SaveChanges();
             }
+
             var query = context.Customers.AsQueryable();
 
+            // Aplicamos filtro de búsqueda si el usuario escribió algo
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
                 var searchLower = SearchText.ToLower();
@@ -110,6 +159,7 @@ namespace Client_Ranker.ViewModels
 
             CustomersDisplay.Clear();
 
+            // 2. Mapeamos de Entidad a DTO (CustomerRow) inyectando reglas de negocio
             foreach (var c in dbCustomers)
             {
                 decimal spendingToShow = (SelectedPeriodIndex == 0) ? c.CurrentMonthSpending : c.LastMonthSpending;
@@ -122,8 +172,9 @@ namespace Client_Ranker.ViewModels
                     LastName = c.LastName,
                     Spending = spendingToShow,
                     IsActive = c.IsActive,
+                    CurrentMonthVisits = c.CurrentMonthVisits,
 
-                    // 2. Inyectamos las reglas de negocio al DTO
+                    // Inyección de parámetros de categoría
                     PesosPorPunto = config.PesosPorPunto,
                     SilverThreshold = config.SilverThreshold,
                     GoldThreshold = config.GoldThreshold,
@@ -133,26 +184,70 @@ namespace Client_Ranker.ViewModels
             }
         }
 
+        /// Lógica automática que evalúa si el mes cambió para resetear contadores y guardar el resumen.
+        private void CheckAndCloseMonth()
+        {
+            using var context = CreateContext();
+            var config = context.Configurations.FirstOrDefault();
+            if (config == null) return;
+
+            if (config.LastClosedMonth != DateTime.Now.Month || config.LastClosedYear != DateTime.Now.Year)
+            {
+                var allCustomers = context.Customers.ToList();
+                var clientesConConsumo = allCustomers.Where(c => c.CurrentMonthSpending > 0).ToList();
+
+                int totalTicketsReales = allCustomers.Sum(c => c.CurrentMonthVisits);
+
+                // Generamos la foto histórica del mes que se cierra
+                var summary = new MonthlySummary
+                {
+                    Year = config.LastClosedYear,
+                    Month = config.LastClosedMonth,
+                    TotalRevenue = clientesConConsumo.Sum(c => c.CurrentMonthSpending),
+                    UniqueCustomers = clientesConConsumo.Count,
+                    TotalTickets = totalTicketsReales
+                };
+
+                context.MonthlySummaries.Add(summary);
+
+                // Rotación de métricas de clientes
+                foreach (var customer in allCustomers)
+                {
+                    customer.LastMonthSpending = customer.CurrentMonthSpending;
+                    customer.CurrentMonthSpending = 0;
+                    customer.CurrentMonthVisits = 0;
+                }
+
+                config.LastClosedMonth = DateTime.Now.Month;
+                config.LastClosedYear = DateTime.Now.Year;
+                context.SaveChanges();
+            }
+        }
+
+        #endregion
+
+        #region Operaciones CRUD
+
         private void DeleteCustomer()
         {
             if (SelectedCustomer == null) return;
 
-            using var context = new AppDbContext();
+            using var context = CreateContext();
             var customerInDb = context.Customers.Find(SelectedCustomer.Id);
 
             if (customerInDb != null)
             {
                 if (customerInDb.IsActive)
                 {
-                    // Primer clic: Borrado lógico (inhabilitar)
+                    // Borrado lógico
                     customerInDb.IsActive = false;
                     context.SaveChanges();
                     LoadCustomers();
                 }
                 else
                 {
-                    // Segundo clic (ya estaba inhabilitado): Borrado físico letal
-                    var result = MessageBox.Show($"¿Seguro quiere eliminar de forma definitiva el registro de {SelectedCustomer.FirstName}?.", "Borrado Permanente", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                    // Borrado físico permanente
+                    var result = MessageBox.Show($"¿Seguro quiere eliminar de forma definitiva a {SelectedCustomer.FirstName}?", "Borrado Permanente", MessageBoxButton.YesNo, MessageBoxImage.Warning);
                     if (result == MessageBoxResult.Yes)
                     {
                         context.Customers.Remove(customerInDb);
@@ -167,7 +262,7 @@ namespace Client_Ranker.ViewModels
         {
             if (SelectedCustomer == null || SelectedCustomer.IsActive) return;
 
-            using var context = new AppDbContext();
+            using var context = CreateContext();
             var customerInDb = context.Customers.Find(SelectedCustomer.Id);
 
             if (customerInDb != null)
@@ -178,90 +273,165 @@ namespace Client_Ranker.ViewModels
             }
         }
 
-        private void CheckAndCloseMonth()
-        {
-            using var context = new AppDbContext();
-            var config = context.Configurations.FirstOrDefault();
-            if (config == null) return;
+        #endregion
 
-            if (config.LastClosedMonth != DateTime.Now.Month || config.LastClosedYear != DateTime.Now.Year)
-            {
-                var allCustomers = context.Customers.ToList();
-                var clientesConConsumo = allCustomers.Where(c => c.CurrentMonthSpending > 0).ToList();
+        #region Navegación a Otras Ventanas (Vistas)
 
-                // AQUÍ ESTÁ LA LÓGICA REAL: Sumamos las visitas de todos los clientes
-                int totalTicketsReales = allCustomers.Sum(c => c.CurrentMonthVisits);
+        // para no acoplar la creación de Vistas (new Window()) dentro del ViewModel.
 
-                var summary = new MonthlySummary
-                {
-                    Year = config.LastClosedYear,
-                    Month = config.LastClosedMonth,
-                    TotalRevenue = clientesConConsumo.Sum(c => c.CurrentMonthSpending),
-                    UniqueCustomers = clientesConConsumo.Count,
-                    TotalTickets = totalTicketsReales, // <-- Ahora es un dato real
-                                                       // ... (mantené el resto de tus contadores de Bronce, Plata, etc. igual)
-                };
+        private void OpenAddCustomerWindow() => _dialogService.OpenAddCustomer();
 
-                context.MonthlySummaries.Add(summary);
 
-                foreach (var customer in allCustomers)
-                {
-                    customer.LastMonthSpending = customer.CurrentMonthSpending;
-                    customer.CurrentMonthSpending = 0;
-                    customer.CurrentMonthVisits = 0; // <-- Reseteamos las visitas reales para el mes siguiente
-                }
-
-                config.LastClosedMonth = DateTime.Now.Month;
-                config.LastClosedYear = DateTime.Now.Year;
-                context.SaveChanges();
-            }
-        }
         private void OpenEditCustomerWindow()
         {
-            if (SelectedCustomer == null)
-            {
-                MessageBox.Show("Selecciona un cliente de la lista para editar.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            var editWindow = new EditCustomerWindow(SelectedCustomer.Id);
-            editWindow.ShowDialog();
-            LoadCustomers();
+            if (SelectedCustomer == null) return;
+            _dialogService.OpenEditCustomer(SelectedCustomer.Id);
         }
 
         private void OpenAddPurchaseWindow()
         {
-            if (SelectedCustomer == null)
-            {
-                MessageBox.Show("Primero seleccioná un cliente de la tabla para cargarle una compra.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            // Solo permitimos sumar compras al mes actual. Si está mirando el historial viejo, lo bloqueamos o le avisamos.
-            if (SelectedPeriodIndex != 0)
-            {
-                MessageBox.Show("Solo podés cargar compras en el Mes Actual. Cambiá el selector de período.", "Atención", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
-            var purchaseWindow = new AddPurchaseWindow(SelectedCustomer.Id);
-            purchaseWindow.ShowDialog();
-            LoadCustomers(); // Recargamos para ver los puntos subir en tiempo real
+            if (SelectedCustomer == null || SelectedPeriodIndex != 0) return;
+            _dialogService.OpenAddPurchase(SelectedCustomer.Id);
         }
+
+        private void OpenDashboardWindow() => _dialogService.OpenDashboard();
+
 
         private void OpenSettingsWindow()
         {
-            // Le pasamos LoadCustomers como la acción de recarga
-            var settingsWindow = new SettingsWindow(LoadCustomers);
-            settingsWindow.ShowDialog();
+            if (_dialogService.OpenLoginSupervisor())
+            {
+                _dialogService.OpenSettings(LoadCustomers);
+            }
         }
-        private void OpenAddCustomerWindow()
+
+        #endregion
+
+        #region Utilidades (Exportación a Excel)
+
+        /// Genera y descarga un reporte en formato .xlsx usando la librería ClosedXML.
+        private void ExportToExcel()
         {
-            var addWindow = new AddCustomerWindow();
-            addWindow.ShowDialog();
-            LoadCustomers();
+            if (CustomersDisplay == null || !CustomersDisplay.Any())
+            {
+                MessageBox.Show("No hay datos para exportar.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Filter = "Libro de Excel (*.xlsx)|*.xlsx",
+                FileName = $"Reporte_Fidelidad_{DateTime.Now:yyyyMMdd_HHmm}.xlsx",
+                Title = "Guardar Reporte Comercial"
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    using (var workbook = new XLWorkbook())
+                    {
+                        var worksheet = workbook.Worksheets.Add("Panel General");
+
+                        // Estilos de Encabezados
+                        string[] headers = { "Documento/DNI", "Nombre", "Apellido", "Consumo Período ($)", "Visitas", "Estado Cuenta" };
+                        for (int i = 0; i < headers.Length; i++)
+                        {
+                            var cell = worksheet.Cell(1, i + 1);
+                            cell.Value = headers[i];
+                            cell.Style.Font.Bold = true;
+                            cell.Style.Font.FontColor = XLColor.White;
+                            cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#2c3e50");
+                            cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                        }
+
+                        // Mapeo de Filas
+                        int currentRow = 2;
+                        foreach (var customer in CustomersDisplay)
+                        {
+                            worksheet.Cell(currentRow, 1).Value = customer.DocumentId;
+                            worksheet.Cell(currentRow, 2).Value = customer.FirstName;
+                            worksheet.Cell(currentRow, 3).Value = customer.LastName;
+
+                            var moneyCell = worksheet.Cell(currentRow, 4);
+                            moneyCell.Value = customer.Spending;
+                            moneyCell.Style.NumberFormat.Format = "$#,##0.00";
+
+                            worksheet.Cell(currentRow, 5).Value = customer.CurrentMonthVisits;
+
+                            var statusCell = worksheet.Cell(currentRow, 6);
+                            statusCell.Value = customer.IsActive ? "Activo" : "Inhabilitado";
+                            statusCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                            // Zebra striping
+                            if (currentRow % 2 == 0)
+                            {
+                                worksheet.Range(currentRow, 1, currentRow, 6).Style.Fill.BackgroundColor = XLColor.FromHtml("#f8f9fa");
+                            }
+
+                            currentRow++;
+                        }
+
+                        worksheet.Columns().AdjustToContents();
+                        workbook.SaveAs(saveFileDialog.FileName);
+                    }
+
+                    MessageBox.Show("Reporte generado con éxito.", "Exportación", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (System.IO.IOException)
+                {
+                    MessageBox.Show("El archivo está abierto en otro programa. Ciérrelo e intente nuevamente.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error crítico al exportar: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
         }
 
+        #endregion
 
+        #region Datos de Prueba (Testing)
+
+        /// Borra los históricos actuales y genera 12 meses de datos ficticios para poder ver los gráficos en el Dashboard.
+        private void GenerateTestData()
+        {
+            var result = MessageBox.Show("¿Generar datos de prueba? Esto borrará el historial de resúmenes.", "Modo Demo", MessageBoxButton.YesNo);
+            if (result != MessageBoxResult.Yes) return;
+
+            using var context = CreateContext();
+
+            context.MonthlySummaries.RemoveRange(context.MonthlySummaries);
+
+            var random = new Random();
+            int year = DateTime.Now.Year;
+            int month = DateTime.Now.Month;
+
+            for (int i = 13; i >= 1; i--)
+            {
+                int targetMonth = month - i;
+                int targetYear = year;
+                if (targetMonth <= 0) { targetMonth += 12; targetYear--; }
+
+                context.MonthlySummaries.Add(new MonthlySummary
+                {
+                    Year = targetYear,
+                    Month = targetMonth,
+                    TotalRevenue = random.Next(150000, 500000),
+                    TotalTickets = random.Next(50, 200),
+                    UniqueCustomers = random.Next(40, 100),
+                    BronzeCount = random.Next(20, 50),
+                    SilverCount = random.Next(10, 30),
+                    GoldCount = random.Next(5, 15),
+                    PlatinumCount = random.Next(2, 10),
+                    DiamondCount = random.Next(1, 5)
+                });
+            }
+
+            context.SaveChanges();
+            MessageBox.Show("Datos generados. Abrí el Dashboard para verlos.", "Demo");
+        }
+
+        #endregion
     }
 }

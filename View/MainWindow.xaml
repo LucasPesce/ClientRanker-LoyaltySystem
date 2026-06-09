@@ -19,9 +19,10 @@
         </Grid.RowDefinitions>
 
         <Menu Grid.Row="0" Margin="-20,-20,-20,15" Background="#FFE5E5E5" Padding="5,2" Grid.ColumnSpan="2">
+            <MenuItem Header="💾 Exportar Excel" Command="{Binding ExportReportCommand}" />
             <MenuItem Header="📊 Estadisticas" Command="{Binding OpenDashboardCommand}" />
             <MenuItem Header="⚙️ Configuración de Categorias" Command="{Binding OpenSettingsCommand}" />
-            <MenuItem Header="🧪 Test App" Command="{Binding OpenTestCommand}" Foreground="Brown" />
+            <MenuItem Header="🚀 Demo (Generar Datos de Prueba)" Command="{Binding TestAppCommand}" Background="#FFFFC45A"/>
         </Menu>
 
         <DockPanel Grid.Row="1" Margin="0,0,0,15" Grid.ColumnSpan="2">
@@ -60,6 +61,7 @@
                 <DataGridTextColumn Header="DNI/Documento" Binding="{Binding DocumentId}" Width="120"/>
                 <DataGridTextColumn Header="Apellido" Binding="{Binding LastName}" Width="*"/>
                 <DataGridTextColumn Header="Nombre / Alias" Binding="{Binding FirstName}" Width="*"/>
+                <DataGridTextColumn Header="Frecuencia" Binding="{Binding CurrentMonthVisits}" Width="120" IsReadOnly="True"/>
                 <DataGridTextColumn Header="Monto Período" Binding="{Binding Spending, StringFormat=C}" Width="120"/>
                 <DataGridTextColumn Header="Puntos" Binding="{Binding Points}" Width="80"/>
                 <DataGridTextColumn Header="Categoría" Binding="{Binding Category}" Width="100"/>
