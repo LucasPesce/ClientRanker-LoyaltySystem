@@ -1,0 +1,23 @@
+﻿<Window x:Class="Client_Ranker.View.LoginSupervisorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Acceso Restringido" Height="276" Width="350"
+        WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Background="#FFAFA192">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="🔒 Modo Supervisor" FontSize="18" FontWeight="Bold" Foreground="#2d3436" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+
+        <TextBlock Grid.Row="1" Text="Ingrese la contraseña maestra:" Foreground="#2d3436" FontWeight="SemiBold" Margin="0,0,0,5"/>
+
+        <PasswordBox x:Name="txtPassword" Grid.Row="2" Padding="5" FontSize="16" Background="#FFE5E5E5" Foreground="Black" Margin="0,0,0,20"/>
+
+        <Button Grid.Row="3" Content="Ingresar" Background="#FF0984E3" Foreground="White" FontWeight="Bold" Height="35" VerticalAlignment="Top" Click="BtnLogin_Click" Margin="0,19,0,0"/>
+        <Button Grid.Row="3" Content="Olvidé mi contraseña" Background="Transparent" Foreground="#0984E3" BorderThickness="0" HorizontalAlignment="Center" Click="BtnRecover_Click" Margin="0,78,0,0"/>
+    </Grid>
+</Window>

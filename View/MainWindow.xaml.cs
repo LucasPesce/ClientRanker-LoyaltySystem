@@ -1,29 +1,15 @@
 ﻿using Client_Ranker.ViewModels;
-using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace Client_Ranker.View
 {
-
     public partial class MainWindow : Window
     {
-        public MainWindow()
+        // El contenedor de dependencias inyectará automáticamente el MainViewModel aquí
+        public MainWindow(MainViewModel viewModel)
         {
             InitializeComponent();
-            this.DataContext = new MainViewModel();
-        }
-
-        private void BtnAdd_Click(object sender, RoutedEventArgs e)
-        {
-
+            this.DataContext = viewModel; // Asignamos el ViewModel ya resuelto
         }
     }
 }
